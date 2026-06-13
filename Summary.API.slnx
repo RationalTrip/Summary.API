@@ -1,0 +1,8 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/Summary.API/Summary.API.csproj" />
+    <Project Path="src/Summary.Application/Summary.Application.csproj" Id="3b1b5a0c-3fe3-4ff2-85a5-76817de6c9b1" />
+    <Project Path="src/Summary.Core/Summary.Core.csproj" Id="3afb6331-b272-4f3d-be31-e0aa2a73578b" />
+    <Project Path="src/Summary.Infrastructure/Summary.Infrastructure.csproj" Id="53f5055c-f299-4688-b1ca-6e2f4919cf42" />
+  </Folder>
+</Solution>
