@@ -1,4 +1,7 @@
 <Solution>
+  <Folder Name="/Solution Items/">
+    <File Path="Directory.Packages.props" />
+  </Folder>
   <Folder Name="/src/">
     <Project Path="src/Summary.API/Summary.API.csproj" />
     <Project Path="src/Summary.Application/Summary.Application.csproj" Id="3b1b5a0c-3fe3-4ff2-85a5-76817de6c9b1" />
