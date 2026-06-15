@@ -1,5 +1,7 @@
 using Summary.API.Extensions.DependencyInjection;
 using Summary.API.Middlewares;
+using Summary.Application.Extensions.DependencyInjection;
+using Summary.Infrastructure.Extensions.DependencyInjection;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -10,6 +12,9 @@ builder.Services.AddControllers();
 builder.Services.AddOpenApi();
 
 builder.Services.AddCustomOpenTelemetry(builder.Configuration);
+
+builder.Services.AddApplicationServices(builder.Configuration);
+builder.Services.AddInfrastructureServices(builder.Configuration);
 
 // Configure Logging
 builder.Logging.ConfigureCustomLogging();

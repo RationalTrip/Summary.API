@@ -1,7 +1,7 @@
 using FluentValidation;
 using Microsoft.Extensions.Options;
 using Summary.Application.Configurations;
-using Summary.Application.Models;
+using Summary.Core.Models;
 
 namespace Summary.Application.Validators;
 

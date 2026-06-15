@@ -1,4 +1,4 @@
-﻿namespace Summary.Application.Models;
+﻿namespace Summary.Core.Models;
 
 public class SummarizeRequest
 {

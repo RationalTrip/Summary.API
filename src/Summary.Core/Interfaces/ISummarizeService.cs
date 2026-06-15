@@ -1,6 +1,6 @@
-﻿using Summary.Application.Models;
+﻿using Summary.Core.Models;
 
-namespace Summary.Infrastructure.Services;
+namespace Summary.Core.Interfaces;
 
 public interface ISummarizeService
 {

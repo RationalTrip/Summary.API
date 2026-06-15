@@ -2,6 +2,8 @@
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Summary.Application.Configurations;
+using Summary.Application.Services;
+using Summary.Core.Interfaces;
 
 namespace Summary.Application.Extensions.DependencyInjection;
 
@@ -17,6 +19,8 @@ public static class ServiceCollectionExtensions
 
         // Register FluentValidation validators
         services.AddValidatorsFromAssemblyContaining<ApplicationProject>();
+
+        services.AddScoped<ISummarizeService, SummarizeService>();
 
         return services;
     }
