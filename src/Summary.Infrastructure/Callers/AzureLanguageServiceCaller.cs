@@ -1,31 +1,58 @@
 using Azure;
 using Azure.AI.TextAnalytics;
+using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Summary.Core.Exceptions;
 using Summary.Core.Interfaces;
 using Summary.Infrastructure.Configurations;
+using Summary.Infrastructure.Helpers;
 
 namespace Summary.Infrastructure.Callers;
 
 public class AzureLanguageServiceCaller : ILanguageServiceCaller
 {
     private readonly TextAnalyticsClient _textAnalyticsClient;
+    private readonly ILogger<AzureLanguageServiceCaller> _logger;
+    private readonly AzureLanguageServiceConfigurations _config;
 
-    public AzureLanguageServiceCaller(IOptions<AzureLanguageServiceConfigurations> options)
+    public AzureLanguageServiceCaller(
+        TextAnalyticsClient textAnalyticsClient,
+        ILogger<AzureLanguageServiceCaller> logger,
+        IOptions<AzureLanguageServiceConfigurations> options)
     {
-        var config = options.Value;
-        _textAnalyticsClient = new TextAnalyticsClient(
-            new Uri(config.Endpoint),
-            new AzureKeyCredential(config.ApiKey));
+        _textAnalyticsClient = textAnalyticsClient;
+        _logger = logger;
+        _config = options.Value;
     }
 
     public async Task<string> AbstractiveSummarizeAsync(string text, CancellationToken cancellationToken)
     {
-        var documents = new List<string> { text };
+        var chunks = TextChunker.Split(text, _config.MaxDocumentCharacterLength);
 
+        var semaphore = new SemaphoreSlim(_config.MaxDegreeOfParallelism);
+        var tasks = chunks.Select(async (chunk, index) =>
+        {
+            await semaphore.WaitAsync(cancellationToken);
+            try
+            {
+                return (index, summary: await SummarizeDocumentAsync(chunk, cancellationToken));
+            }
+            finally
+            {
+                semaphore.Release();
+            }
+        });
+
+        var results = await Task.WhenAll(tasks);
+
+        return string.Join(" ", results.OrderBy(r => r.index).Select(r => r.summary));
+    }
+
+    private async Task<string> SummarizeDocumentAsync(string document, CancellationToken cancellationToken)
+    {
         var operation = await _textAnalyticsClient.AbstractiveSummarizeAsync(
             WaitUntil.Completed,
-            documents,
+            [document],
             cancellationToken: cancellationToken);
 
         await foreach (AbstractiveSummarizeResultCollection resultsPage in operation.Value)
@@ -34,9 +61,12 @@ public class AzureLanguageServiceCaller : ILanguageServiceCaller
             {
                 if (documentResult.HasError)
                 {
-                    throw new SummaryGeneralException(
-                        "Azure Language Service returned an error.",
-                        new { documentResult.Error.ErrorCode, documentResult.Error.Message });
+                    _logger.LogError(
+                        "Azure Language Service returned an error for a document. ErrorCode: {ErrorCode}, Message: {Message}",
+                        documentResult.Error.ErrorCode,
+                        documentResult.Error.Message);
+
+                    throw new SummaryGeneralException("Azure Language Service returned an error.", debugDetails: new { documentResult.Error.ErrorCode, documentResult.Error.Message });
                 }
 
                 return documentResult.Summaries.Any()

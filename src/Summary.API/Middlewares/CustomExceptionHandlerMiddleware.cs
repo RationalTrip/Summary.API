@@ -42,6 +42,9 @@ public class CustomExceptionHandlerMiddleware
                     Details = customException.Details
                 };
 
+                if (_env.IsDevelopment())
+                    errorResponse.DebugDetails = customException.DebugDetails;
+
                 statusCode = customException.StatusCode;
                 break;
 
@@ -50,7 +53,7 @@ public class CustomExceptionHandlerMiddleware
                 {
                     ErrorCode = ExceptionConstants.UnexpectedErrorCode,
                     Message = ex.Message,
-                    Details = debugException.StackTrace
+                    DebugDetails = debugException.StackTrace
                 };
 
                 statusCode = ExceptionConstants.BadRequestStatusCode;

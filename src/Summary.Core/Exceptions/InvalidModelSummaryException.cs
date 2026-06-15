@@ -4,8 +4,8 @@ namespace Summary.Core.Exceptions;
 
 public class InvalidModelSummaryException : SummaryBaseException
 {
-    public InvalidModelSummaryException(string message, object? details)
-        : base(message, ExceptionConstants.BadRequestStatusCode, ExceptionConstants.InvalidModelErrorCode, details)
+    public InvalidModelSummaryException(string message, object? details = null, object? debugDetails = null)
+        : base(message, ExceptionConstants.BadRequestStatusCode, ExceptionConstants.InvalidModelErrorCode, details, debugDetails)
     {
 
     }
