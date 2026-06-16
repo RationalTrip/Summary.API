@@ -2,5 +2,5 @@ namespace Summary.Core.Interfaces;
 
 public interface ILanguageServiceCaller
 {
-    Task<string> AbstractiveSummarizeAsync(string text, CancellationToken cancellationToken);
+    Task<IEnumerable<string>> AbstractiveSummarizeAsync(string text, CancellationToken cancellationToken);
 }

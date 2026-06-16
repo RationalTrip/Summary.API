@@ -33,6 +33,6 @@ public class SummarizeService : ISummarizeService
 
         var summary = await _languageServiceCaller.AbstractiveSummarizeAsync(request.InputText, cancellationToken);
 
-        return new SummarizeResponse { Summary = summary };
+        return new SummarizeResponse { Summaries = summary };
     }
 }

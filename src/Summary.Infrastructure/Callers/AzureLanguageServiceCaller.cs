@@ -13,68 +13,62 @@ public class AzureLanguageServiceCaller : ILanguageServiceCaller
 {
     private readonly TextAnalyticsClient _textAnalyticsClient;
     private readonly ILogger<AzureLanguageServiceCaller> _logger;
-    private readonly AzureLanguageServiceConfigurations _config;
+    private readonly AzureLanguageServiceConfigurations _languageServiceConfiguration;
 
     public AzureLanguageServiceCaller(
         TextAnalyticsClient textAnalyticsClient,
         ILogger<AzureLanguageServiceCaller> logger,
-        IOptions<AzureLanguageServiceConfigurations> options)
+        IOptions<AzureLanguageServiceConfigurations> languageServiceConfigurationOptions)
     {
         _textAnalyticsClient = textAnalyticsClient;
         _logger = logger;
-        _config = options.Value;
+        _languageServiceConfiguration = languageServiceConfigurationOptions.Value;
     }
 
-    public async Task<string> AbstractiveSummarizeAsync(string text, CancellationToken cancellationToken)
+    public async Task<IEnumerable<string>> AbstractiveSummarizeAsync(string text, CancellationToken cancellationToken)
     {
-        var chunks = TextChunker.Split(text, _config.MaxDocumentCharacterLength);
+        var result = new List<string>();
 
-        var semaphore = new SemaphoreSlim(_config.MaxDegreeOfParallelism);
-        var tasks = chunks.Select(async (chunk, index) =>
+        var batches = PreferParagraphTextChunker.Split(text, _languageServiceConfiguration.DocumentSizeLimit, _languageServiceConfiguration.DocumentPerBatchLimit);
+
+        foreach (var batch in batches)
         {
-            await semaphore.WaitAsync(cancellationToken);
-            try
-            {
-                return (index, summary: await SummarizeDocumentAsync(chunk, cancellationToken));
-            }
-            finally
-            {
-                semaphore.Release();
-            }
-        });
-
-        var results = await Task.WhenAll(tasks);
-
-        return string.Join(" ", results.OrderBy(r => r.index).Select(r => r.summary));
-    }
-
-    private async Task<string> SummarizeDocumentAsync(string document, CancellationToken cancellationToken)
-    {
-        var operation = await _textAnalyticsClient.AbstractiveSummarizeAsync(
+            var operation = await _textAnalyticsClient.AbstractiveSummarizeAsync(
             WaitUntil.Completed,
-            [document],
+            batch,
+            options: new AbstractiveSummarizeOptions { IncludeStatistics = true, },
             cancellationToken: cancellationToken);
 
-        await foreach (AbstractiveSummarizeResultCollection resultsPage in operation.Value)
-        {
-            foreach (AbstractiveSummarizeResult documentResult in resultsPage)
+            await foreach (var page in operation.Value)
             {
-                if (documentResult.HasError)
+                foreach (var documentResult in page)
                 {
-                    _logger.LogError(
-                        "Azure Language Service returned an error for a document. ErrorCode: {ErrorCode}, Message: {Message}",
-                        documentResult.Error.ErrorCode,
-                        documentResult.Error.Message);
+                    if (documentResult is null)
+                        continue;
 
-                    throw new SummaryGeneralException("Azure Language Service returned an error.", debugDetails: new { documentResult.Error.ErrorCode, documentResult.Error.Message });
+                    if (documentResult.HasError)
+                    {
+                        _logger.LogError(
+                            "Azure Language Service returned an error for a document. ErrorCode: {ErrorCode}, Message: {Message}",
+                            documentResult.Error.ErrorCode,
+                            documentResult.Error.Message);
+
+                        throw new SummaryGeneralException("Azure Language Service returned an error.", debugDetails: new { documentResult.Error.ErrorCode, documentResult.Error.Message });
+                    }
+
+                    _logger.LogInformation(
+                        "Azure Language Service usage. Characters: {CharacterCount}, Transactions: {TransactionCount}",
+                        documentResult.Statistics.CharacterCount,
+                        documentResult.Statistics.TransactionCount);
+
+                    var summaries = documentResult.Summaries.Where(s => !string.IsNullOrWhiteSpace(s.Text)).Select(s => s.Text);
+
+                    if (summaries.Any())
+                        result.AddRange(summaries);
                 }
-
-                return documentResult.Summaries.Any()
-                    ? documentResult.Summaries.First().Text
-                    : string.Empty;
             }
         }
 
-        return string.Empty;
+        return result;
     }
 }

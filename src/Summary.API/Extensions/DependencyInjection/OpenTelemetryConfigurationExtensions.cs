@@ -45,7 +45,8 @@ public static class OpenTelemetryConfigurationExtensions
                     options.RecordException = true;
                 });
 
-                tracer.AddHttpClientInstrumentation();
+                tracer.AddHttpClientInstrumentation()
+                    .AddSource("Azure.*");
             })
             .WithMetrics(metrics =>
             {
