@@ -1,5 +1,6 @@
 using Summary.API.Extensions.DependencyInjection;
 using Summary.API.Middlewares;
+using Summary.API.OpenApi;
 using Summary.Application.Extensions.DependencyInjection;
 using Summary.Infrastructure.Extensions.DependencyInjection;
 
@@ -9,12 +10,16 @@ var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddControllers();
 // Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
-builder.Services.AddOpenApi();
+builder.Services.AddOpenApi(options =>
+{
+    options.AddDocumentTransformer<ApiKeySecurityDocumentTransformer>();
+});
 
 builder.Services.AddCustomOpenTelemetry(builder.Configuration);
 
 builder.Services.AddApplicationServices(builder.Configuration);
 builder.Services.AddInfrastructureServices(builder.Configuration);
+builder.Services.AddApiKeyAuthentication(builder.Configuration);
 
 // Configure Logging
 builder.Logging.ConfigureCustomLogging();
@@ -34,6 +39,6 @@ app.UseAuthorization();
 
 app.UseMiddleware<CustomExceptionHandlerMiddleware>();
 
-app.MapControllers();
+app.MapControllers().RequireAuthorization();
 
 app.Run();
