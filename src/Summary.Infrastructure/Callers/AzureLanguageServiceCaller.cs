@@ -25,17 +25,17 @@ public class AzureLanguageServiceCaller : ILanguageServiceCaller
         _languageServiceConfiguration = languageServiceConfigurationOptions.Value;
     }
 
-    public async Task<IEnumerable<string>> AbstractiveSummarizeAsync(string text, CancellationToken cancellationToken)
+    public async Task<string> AbstractiveSummarizeAsync(string text, CancellationToken cancellationToken)
     {
         var result = new List<string>();
 
-        var batches = PreferParagraphTextChunker.Split(text, _languageServiceConfiguration.DocumentSizeLimit, _languageServiceConfiguration.DocumentPerBatchLimit);
+        var chunks = PreferParagraphTextChunker.Split(text, _languageServiceConfiguration.DocumentSizeLimit);
 
-        foreach (var batch in batches)
+        foreach (var chunk in chunks)
         {
             var operation = await _textAnalyticsClient.AbstractiveSummarizeAsync(
             WaitUntil.Completed,
-            batch,
+            [chunk],
             options: new AbstractiveSummarizeOptions { IncludeStatistics = true, },
             cancellationToken: cancellationToken);
 
@@ -69,6 +69,6 @@ public class AzureLanguageServiceCaller : ILanguageServiceCaller
             }
         }
 
-        return result;
+        return string.Join(" ", result);
     }
 }

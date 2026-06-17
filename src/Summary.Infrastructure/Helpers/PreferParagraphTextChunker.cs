@@ -7,10 +7,10 @@ internal static class PreferParagraphTextChunker
     /// <paramref name="maxChunkLength"/> characters, preferring to break
     /// on paragraph boundaries (\n\n), then sentence boundaries (.), then words.
     /// </summary>
-    internal static IEnumerable<IEnumerable<string>> Split(string text, int maxChunkLength, int batchSize)
+    internal static IEnumerable<string> Split(string text, int maxChunkLength)
     {
         if (text.Length <= maxChunkLength)
-            return [[text]];
+            return [text];
 
         var chunks = new List<string>();
         var remaining = text.AsSpan().Trim();
@@ -45,6 +45,6 @@ internal static class PreferParagraphTextChunker
             remaining = remaining[chunkLength..].TrimStart();
         }
 
-        return chunks.Chunk(batchSize);
+        return chunks;
     }
 }

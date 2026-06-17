@@ -6,7 +6,7 @@ public class OpenTelemetryConfiguration
 
     public required string ServiceName { get; set; }
 
-    public double SamlingRatio { get; set; }
+    public double SamplingRatio { get; set; }
 
     public required string ConnectionString { get; set; }
 }

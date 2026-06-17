@@ -21,7 +21,6 @@ public static class ServiceCollectionExtensions
         services.AddOptions<AzureLanguageServiceConfigurations>()
             .Bind(configuration.GetSection(AzureLanguageServiceConfigurations.SectionName))
             .Validate(config => config.DocumentSizeLimit > 0, "DocumentSizeLimit must be greater than 0.")
-            .Validate(config => config.DocumentPerBatchLimit > 0, "DocumentPerBatchLimit must be greater than 0.")
             .ValidateOnStart();
 
         services.AddAzureClients(builder =>

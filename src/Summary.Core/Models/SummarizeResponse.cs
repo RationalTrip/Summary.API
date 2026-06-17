@@ -2,5 +2,5 @@
 
 public class SummarizeResponse
 {
-    public IEnumerable<string> Summaries { get; set; } = [];
+    public string Summary { get; set; } = string.Empty;
 }

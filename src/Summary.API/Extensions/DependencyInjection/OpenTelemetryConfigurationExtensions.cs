@@ -60,13 +60,13 @@ public static class OpenTelemetryConfigurationExtensions
                 options.ConnectionString = openTelemetryConfig.ConnectionString;
             });
 
-        if (openTelemetryConfig.SamlingRatio <= 0 || openTelemetryConfig.SamlingRatio > 1)
-            throw new InvalidOperationException($"Configuration section '{OpenTelemetryConfiguration.SectionName}' '{nameof(OpenTelemetryConfiguration.SamlingRatio)}' configuration error. " +
-                $"Expected value should be in range (0, 1]. Actual value {openTelemetryConfig.SamlingRatio}");
+        if (openTelemetryConfig.SamplingRatio <= 0 || openTelemetryConfig.SamplingRatio > 1)
+            throw new InvalidOperationException($"Configuration section '{OpenTelemetryConfiguration.SectionName}' '{nameof(OpenTelemetryConfiguration.SamplingRatio)}' configuration error. " +
+                $"Expected value should be in range (0, 1]. Actual value {openTelemetryConfig.SamplingRatio}");
 
         // Added separately because 'UseAzureMonitor' can override Sampler defined within 'WithTracing'
         services.ConfigureOpenTelemetryTracerProvider((sp, tracer) =>
-            tracer.SetSampler(new RequestAllowedSampler(openTelemetryConfig.SamlingRatio)));
+            tracer.SetSampler(new RequestAllowedSampler(openTelemetryConfig.SamplingRatio)));
 
         return services;
     }
