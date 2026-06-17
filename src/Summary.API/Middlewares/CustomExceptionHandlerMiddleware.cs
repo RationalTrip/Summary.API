@@ -73,6 +73,6 @@ public class CustomExceptionHandlerMiddleware
 
         context.Response.ContentType = "application/json";
         context.Response.StatusCode = statusCode;
-        context.Response.WriteAsJsonAsync(errorResponse);
+        await context.Response.WriteAsJsonAsync(errorResponse);
     }
 }
