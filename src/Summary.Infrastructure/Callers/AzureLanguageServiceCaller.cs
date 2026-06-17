@@ -27,48 +27,59 @@ public class AzureLanguageServiceCaller : ILanguageServiceCaller
 
     public async Task<string> AbstractiveSummarizeAsync(string text, CancellationToken cancellationToken)
     {
-        var result = new List<string>();
 
         var chunks = PreferParagraphTextChunker.Split(text, _languageServiceConfiguration.DocumentSizeLimit);
 
+        var result = new List<string>();
+
         foreach (var chunk in chunks)
         {
-            var operation = await _textAnalyticsClient.AbstractiveSummarizeAsync(
-            WaitUntil.Completed,
-            [chunk],
-            options: new AbstractiveSummarizeOptions { IncludeStatistics = true, },
-            cancellationToken: cancellationToken);
-
-            await foreach (var page in operation.Value)
-            {
-                foreach (var documentResult in page)
-                {
-                    if (documentResult is null)
-                        continue;
-
-                    if (documentResult.HasError)
-                    {
-                        _logger.LogError(
-                            "Azure Language Service returned an error for a document. ErrorCode: {ErrorCode}, Message: {Message}",
-                            documentResult.Error.ErrorCode,
-                            documentResult.Error.Message);
-
-                        throw new SummaryGeneralException("Azure Language Service returned an error.", debugDetails: new { documentResult.Error.ErrorCode, documentResult.Error.Message });
-                    }
-
-                    _logger.LogInformation(
-                        "Azure Language Service usage. Characters: {CharacterCount}, Transactions: {TransactionCount}",
-                        documentResult.Statistics.CharacterCount,
-                        documentResult.Statistics.TransactionCount);
-
-                    var summaries = documentResult.Summaries.Where(s => !string.IsNullOrWhiteSpace(s.Text)).Select(s => s.Text);
-
-                    if (summaries.Any())
-                        result.AddRange(summaries);
-                }
-            }
+            var summaries = await SummarizeAsync(chunk, cancellationToken);
+            result.AddRange(summaries);
         }
 
         return string.Join(" ", result);
+    }
+
+    private async Task<IEnumerable<string>> SummarizeAsync(string chunk, CancellationToken cancellationToken)
+    {
+        var result = new List<string>();
+
+        var operation = await _textAnalyticsClient.AbstractiveSummarizeAsync(
+                    WaitUntil.Completed,
+                    [chunk],
+                    options: new AbstractiveSummarizeOptions { IncludeStatistics = true, },
+                    cancellationToken: cancellationToken);
+
+        await foreach (var page in operation.Value)
+        {
+            foreach (var documentResult in page)
+            {
+                if (documentResult is null)
+                    continue;
+
+                if (documentResult.HasError)
+                {
+                    _logger.LogError(
+                        "Azure Language Service returned an error for a document. ErrorCode: {ErrorCode}, Message: {Message}",
+                        documentResult.Error.ErrorCode,
+                        documentResult.Error.Message);
+
+                    throw new SummaryGeneralException("Azure Language Service returned an error.", debugDetails: new { documentResult.Error.ErrorCode, documentResult.Error.Message });
+                }
+
+                _logger.LogInformation(
+                    "Azure Language Service usage. Characters: {CharacterCount}, Transactions: {TransactionCount}",
+                    documentResult.Statistics.CharacterCount,
+                    documentResult.Statistics.TransactionCount);
+
+                var summaries = documentResult.Summaries.Where(s => !string.IsNullOrWhiteSpace(s.Text)).Select(s => s.Text);
+
+                if (summaries.Any())
+                    result.AddRange(summaries);
+            }
+        }
+
+        return result;
     }
 }
