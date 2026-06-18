@@ -23,11 +23,11 @@ public class CustomExceptionHandlerMiddleware
         }
         catch (Exception ex)
         {
-            HandleException(httpContext, ex, logger);
+            await HandleException(httpContext, ex, logger);
         }
     }
 
-    private void HandleException(HttpContext context, Exception ex, ILogger<CustomExceptionHandlerMiddleware> logger)
+    private async Task HandleException(HttpContext context, Exception ex, ILogger<CustomExceptionHandlerMiddleware> logger)
     {
         GeneralErrorResponse errorResponse;
         int statusCode;
